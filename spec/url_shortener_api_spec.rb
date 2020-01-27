@@ -9,7 +9,7 @@ describe "post /", type: "request" do
     }
   end
 
-  it "should shorten urls" do
+  it "should have an endpoint" do
     post "/", params: valid_params
   end
 end
