@@ -9,7 +9,12 @@ describe "post /", type: "request" do
     }
   end
 
-  it "should have an endpoint" do
+  let(:expected_response) do
+    '{"short_url":"/abc123","url":"http://www.farmdrop.com"}'
+  end
+
+  it "should shorten urls" do
     post "/", params: valid_params
+    expect(response.body).to eq expected_response
   end
 end
