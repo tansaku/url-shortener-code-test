@@ -9,10 +9,6 @@ describe "Url Shortener", type: "request" do
     }
   end
 
-  let(:expected_response) do
-    '{"short_url":"/abc123","url":"http://www.farmdrop.com"}'
-  end
-
   context "POST /" do
     # this around block ensures that the system supports using a simple curl operation
     # as requested in the specification, as this ensures the tests will fail
@@ -25,15 +21,19 @@ describe "Url Shortener", type: "request" do
       ActionController::Base.allow_forgery_protection = false
     end
 
-    it "should shorten urls" do
-      post "/", params: valid_params
-      expect(response.body).to eq expected_response
+    fit "should shorten urls" do
+      post "/", params: valid_params, as: :json
+      json = JSON.parse(response.body)
+      expect(json["url"]).to eq "http://www.farmdrop.com"
+      expect(json["short_url"]).to match(/[a-z0-9]+/)
     end
   end
 
   context "GET" do
-    it "should redirect to original URL" do
-      get "/abc123"
+    fit "should redirect to original URL" do
+      post "/", params: valid_params, as: :json
+      short = JSON.parse(response.body)["short_url"]
+      get "/#{short}"
       expect(response).to redirect_to "http://www.farmdrop.com"
       expect(response.status).to eq 301
     end
