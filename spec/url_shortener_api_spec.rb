@@ -17,4 +17,9 @@ describe "post /", type: "request" do
     post "/", params: valid_params
     expect(response.body).to eq expected_response
   end
+
+  it "should redirect to original URL" do
+    get "/abc123"
+    expect(response).to redirect_to "http://www.farmdrop.com"
+  end
 end
