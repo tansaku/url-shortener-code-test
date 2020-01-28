@@ -9,6 +9,24 @@ describe "Url Shortener", type: "request" do
     }
   end
 
+  let(:valid_params_without_http_prefix) do
+    {
+      url: "www.farmdrop.com"
+    }
+  end
+
+  let(:invalid_params_empty_string) do
+    {
+      url: ""
+    }
+  end
+
+  let(:invalid_params_no_url) do
+    {
+      url_missing: ""
+    }
+  end
+
   context "POST /" do
     # this around block ensures that the system supports using a simple curl operation
     # as requested in the specification, as this ensures the tests will fail
@@ -21,21 +39,49 @@ describe "Url Shortener", type: "request" do
       ActionController::Base.allow_forgery_protection = false
     end
 
-    fit "should shorten urls" do
+    it "should shorten urls" do
       post "/", params: valid_params, as: :json
       json = JSON.parse(response.body)
       expect(json["url"]).to eq "http://www.farmdrop.com"
       expect(json["short_url"]).to match(/[a-z0-9]+/)
     end
+
+    it "should handle lack of http prefix gracefully" do
+      post "/", params: valid_params_without_http_prefix, as: :json
+      json = JSON.parse(response.body)
+      expect(json["url"]).to eq "http://www.farmdrop.com"
+      expect(json["short_url"]).to match(/[a-z0-9]+/)
+    end
+
+    it "should handle empty string gracefully" do
+      post "/", params: invalid_params_empty_string, as: :json
+      json = JSON.parse(response.body)
+      expect(json["errors"]).to eq ["Need valid URL for shortening"]
+      expect(response.status).to eq 500
+    end
+
+    it "should handle no url gracefully" do
+      post "/", params: invalid_params_no_url, as: :json
+      json = JSON.parse(response.body)
+      expect(json["errors"]).to eq ["Must specify parameter url"]
+      expect(response.status).to eq 500
+    end
   end
 
-  context "GET" do
-    fit "should redirect to original URL" do
+  context "GET /<shortened_url>" do
+    it "should redirect to original URL" do
       post "/", params: valid_params, as: :json
       short = JSON.parse(response.body)["short_url"]
       get "/#{short}"
       expect(response).to redirect_to "http://www.farmdrop.com"
       expect(response.status).to eq 301
+    end
+
+    it "handles case when there is no original URL" do
+      get "/invalid"
+      json = JSON.parse(response.body)
+      expect(json["errors"]).to eq ["Cannot redirect to nil!"]
+      expect(response.status).to eq 500
     end
   end
 end
